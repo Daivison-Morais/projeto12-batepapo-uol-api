@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import joi from "joi";
 import dayjs from "dayjs";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -37,9 +37,7 @@ app.post("/participants", async (req, res) => {
   }
 
   try {
-    const findName = await db
-      .collection("participants")
-      .findOne({ from: name });
+    const findName = await db.collection("participants").findOne(name);
     if (findName) {
       return res.status(409).send({ error: "nome já existente" });
     }
@@ -53,7 +51,7 @@ app.post("/participants", async (req, res) => {
     });
 
     await db.collection("participants").insertOne({
-      from: name.name,
+      name: name.name,
       lastStatus: Date.now(),
     });
     res.sendStatus(201);
@@ -88,7 +86,7 @@ app.post("/messages", async (req, res) => {
   try {
     const findUser = await db
       .collection("participants")
-      .findOne({ from: user });
+      .findOne({ name: user });
     if (!findUser) {
       res.status(404).send({ error: "usuário inexistente" });
     }
@@ -144,7 +142,7 @@ app.post("/status", async (req, res) => {
   try {
     const findUser = await db
       .collection("participants")
-      .findOne({ from: user });
+      .findOne({ name: user });
 
     if (!findUser) {
       res.sendStatus(404);
@@ -162,6 +160,26 @@ app.post("/status", async (req, res) => {
     res.sendStatus(404);
   }
 });
+
+/* setInterval(async () => {
+  try {
+    const users = await db.collection("participants").find().toArray();
+
+    const result = users.filter(async (value) => {
+      if ([Date.now() - value.lastStatus] > 10000) {
+        await db.collection("participants").deleteOne({ _id: value._id });
+
+        console.log("deu bom?");
+      } else {
+        //console.log("não passou de 10!");
+      }
+    });
+    //console.log(result);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+}, 15000); */
 
 app.listen(5000, () => {
   console.log("listen on 5000");
