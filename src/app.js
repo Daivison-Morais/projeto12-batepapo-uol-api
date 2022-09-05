@@ -25,7 +25,7 @@ const postparticipantsSchema = joi.object({
 const postmessagesSchema = joi.object({
   to: joi.string().required(),
   text: joi.string().required(),
-  type: joi.valid("message", "private_message"),
+  type: joi.valid("message", "private_message").required(),
 });
 
 app.post("/participants", async (req, res) => {
@@ -129,7 +129,7 @@ app.get("/messages", async (req, res) => {
       return;
     }
 
-    res.send(listAllowed);
+    res.send(response);
   } catch (error) {
     console.error(error);
     res.sendStatus(400);
@@ -161,25 +161,30 @@ app.post("/status", async (req, res) => {
   }
 });
 
-/* setInterval(async () => {
+setInterval(async () => {
   try {
     const users = await db.collection("participants").find().toArray();
 
-    const result = users.filter(async (value) => {
+    users.filter(async (value) => {
       if ([Date.now() - value.lastStatus] > 10000) {
         await db.collection("participants").deleteOne({ _id: value._id });
 
-        console.log("deu bom?");
+        await db.collection("messages").insertOne({
+          from: value.name,
+          to: "Todos",
+          text: "saiu da sala...",
+          type: "status",
+          time: dayjs().format("HH:mm:ss"),
+        });
       } else {
         //console.log("não passou de 10!");
       }
     });
-    //console.log(result);
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
   }
-}, 15000); */
+}, 15000);
 
 app.listen(5000, () => {
   console.log("listen on 5000");
