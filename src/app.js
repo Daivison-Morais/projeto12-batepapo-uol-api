@@ -148,11 +148,14 @@ app.post("/status", async (req, res) => {
       res.sendStatus(404);
       return;
     }
+    const userUpdate = { lastStatus: Date.now() };
 
-    const userUpdate = {
-      ...findUser,
-      lastStatus: Date.now(),
-    };
+    await db
+      .collection("participants")
+      .updateOne({ name: user }, { $set: userUpdate });
+
+    console.log("aqui", findUser, "depois", userUpdate);
+    ///////////////////////////////////////////////////// fazer update
 
     res.sendStatus(200);
   } catch (error) {
@@ -161,12 +164,34 @@ app.post("/status", async (req, res) => {
   }
 });
 
+app.delete("/messages/:idMensagem", async (req, res) => {
+  const { idMensagem } = req.params;
+  const { user } = req.headers;
+
+  try {
+    const findMessage = await db
+      .collection("messages")
+      .findOne({ _id: ObjectId(idMensagem) });
+    if (!findMessage) {
+      res.sendStatus(404);
+    }
+    if (findMessage.from !== user) {
+      res.sendStatus(401);
+    }
+    await db.collection("messages").deleteOne({ _id: ObjectId(idMensagem) });
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
 setInterval(async () => {
   try {
     const users = await db.collection("participants").find().toArray();
 
     users.filter(async (value) => {
-      if ([Date.now() - value.lastStatus] > 10000) {
+      if ([Date.now() - value.lastStatus] > 30000) {
         await db.collection("participants").deleteOne({ _id: value._id });
 
         await db.collection("messages").insertOne({
