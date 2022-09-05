@@ -127,9 +127,22 @@ app.get("/messages", async (req, res) => {
 
       res.send(listAllowed);
       return;
-    }
+    } else {
+      const filterResponse = response.filter((value) => {
+        if (value.type === "private_message") {
+          if (user === value.from || user === value.to) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return true;
+        }
+      });
 
-    res.send(response);
+      res.send(filterResponse);
+      return;
+    }
   } catch (error) {
     console.error(error);
     res.sendStatus(400);
@@ -153,9 +166,6 @@ app.post("/status", async (req, res) => {
     await db
       .collection("participants")
       .updateOne({ name: user }, { $set: userUpdate });
-
-    console.log("aqui", findUser, "depois", userUpdate);
-    ///////////////////////////////////////////////////// fazer update
 
     res.sendStatus(200);
   } catch (error) {
@@ -191,7 +201,7 @@ setInterval(async () => {
     const users = await db.collection("participants").find().toArray();
 
     users.filter(async (value) => {
-      if ([Date.now() - value.lastStatus] > 30000) {
+      if ([Date.now() - value.lastStatus] > 10000) {
         await db.collection("participants").deleteOne({ _id: value._id });
 
         await db.collection("messages").insertOne({
@@ -201,8 +211,6 @@ setInterval(async () => {
           type: "status",
           time: dayjs().format("HH:mm:ss"),
         });
-      } else {
-        //console.log("não passou de 10!");
       }
     });
   } catch (error) {
