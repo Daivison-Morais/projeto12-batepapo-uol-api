@@ -88,7 +88,7 @@ app.post("/messages", async (req, res) => {
       .collection("participants")
       .findOne({ name: user });
     if (!findUser) {
-      res.status(404).send({ error: "usuário inexistente" });
+      return res.status(404).send({ error: "usuário inexistente" });
     }
 
     const response = await db.collection("messages").insertOne({
@@ -183,10 +183,10 @@ app.delete("/messages/:idMensagem", async (req, res) => {
       .collection("messages")
       .findOne({ _id: ObjectId(idMensagem) });
     if (!findMessage) {
-      res.sendStatus(404);
+      return res.sendStatus(404);
     }
     if (findMessage.from !== user) {
-      res.sendStatus(401);
+      return res.sendStatus(401);
     }
     await db.collection("messages").deleteOne({ _id: ObjectId(idMensagem) });
     res.sendStatus(200);
